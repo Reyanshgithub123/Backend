@@ -18,7 +18,7 @@ const userSchema=new Schema({
         trim:true,
         
     },
-    fullname:{
+    fullName:{
         type:String,
         required:true,
        
@@ -28,7 +28,7 @@ const userSchema=new Schema({
     },
     avatar: {
         type:String,
-        required:true,
+        
         
     },
     coverImage:{
@@ -56,7 +56,7 @@ refreshToken:{
 userSchema.pre("save",async function (next) {
     if(!this.isModified("password")) return next();
 
-    this.password=bcrypt.hash(this.password,10)
+    this.password=await bcrypt.hash(this.password,10)
     next()
     
 })
@@ -65,35 +65,40 @@ userSchema.methods.isPasswordCorrect=async function(password){
     return await bcrypt.compare(password,this.password)
 }
 
-userSchema.methods.generateAccessToken=function(){
+userSchema.methods.generateAccessToken = function () {
+    if (!process.env.ACCESS_TOKEN_SECERT) {
+        throw new Error("ACCESS_TOKEN_SECERT is not defined");
+    }
     return jwt.sign(
         {
-            _id:this._id,
-            email:this.email,
-            fullname:this.fullname,
-            username:this.username
-
+            _id: this._id,
+            email: this.email,
+            fullName: this.fullName,
+            username: this.username,
         },
         process.env.ACCESS_TOKEN_SECERT,
         {
-            expiresIn:process.env.ACCESS_TOKEN_EXPIRY
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "15m",
         }
-    )
-}
-userSchema.methods.generateRefereshToken=function(){
+    );
+};
+
+userSchema.methods.generateRefereshToken = function () {
+    if (!process.env.REFRESH_TOKEN_SECERT) {
+        throw new Error("REFRESH_TOKEN_SECERT is not defined");
+    }
     return jwt.sign(
         {
-            _id:this._id
-            
-
+            _id: this._id,
         },
-        process.env.REFERSH_TOKEN_SECERT,
+        process.env.REFRESH_TOKEN_SECERT,
         {
-            expiresIn:process.env.REFERSH_TOKEN_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
         }
-    )
-}
+    );
+};
 
 
 
-export const User=mongoose.model("User",userSchema)
+
+export const User=mongoose.model("User",userSchema) 
